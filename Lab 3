@@ -1,0 +1,50 @@
+import pandas as pd
+import sys
+
+#function that takes in 3 arguments
+def DisplayItemValues(file, item, element):
+    #read the file from csv
+    Stats = pd.read_csv(file)
+    #Convert into pandas dataframe
+    PandaFrame = pd.DataFrame(Stats)
+    #filters the whole frame based on the argument item and element
+    FilteredFrame = PandaFrame[(PandaFrame["Item"]==item) & (PandaFrame["Element"] == element)]
+    #get all countries
+    Countries = set(FilteredFrame["Area"])
+    #create list for nan countries and dictionary for new frame
+    NanCountries = []
+    newFrame = {}
+    #iterate through countries
+    for country in Countries:
+        countryStat = FilteredFrame[FilteredFrame["Area"] == country]\
+        #obtain mean of country
+        AvgValue = countryStat["Value"].mean()
+        #if the column is nan under value, append to NanCountries
+        if countryStat['Value'].isnull().values.any():
+            NanCountries.append(country)
+            pass
+        #if not null, then append the year and value of highest value as well as average 
+        else:
+            newFrame[country]=[]
+            YearValue = countryStat[["Year", "Value"]].sort_values(by="Value", ascending=False)
+            newFrame[country].append(int(YearValue.iloc[0]["Year"]))
+            newFrame[country].append(int(YearValue.iloc[0]["Value"]))
+            newFrame[country].append(int(AvgValue))
+    #function prints nan countries
+    print(NanCountries)
+    #Convert the dataframe into a pandas frame
+    DisplayFrame = pd.DataFrame(newFrame).transpose()
+    #add names for column and index
+    DisplayFrame.columns = ["Year", "Value", "Average"]
+    DisplayFrame.index.name = "Area"
+    #sort countries in alphabetical order
+    SavedFrame = DisplayFrame.sort_index()
+    #save to csv accordingly
+    SavedFrame.to_csv(f"output_{item}_{element}.csv")
+
+
+if __name__ == "__main__":
+    file = sys.argv[1]
+    item = sys.argv[2]
+    element = sys.argv[3]
+    DisplayItemValues(file, item, element)
